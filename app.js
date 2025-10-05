@@ -13,6 +13,8 @@ let a_coef = 1.00;
 let b_coef = 1.00;
 let c_coef = 0.00;
 let current_coef = 'a';
+let x_ratio;
+let y_ratio;
 
 // janela: 2*2 x,y em [-1, 1]
 function resize(target) {
@@ -20,6 +22,8 @@ function resize(target) {
     const width = target.innerWidth;
     const height = target.innerHeight;
 
+    x_ratio = width / canvas.width;
+    y_ratio = height / canvas.height;
     // Set canvas size to occupy the entire window
     canvas.width = width;
     canvas.height = height;
@@ -226,6 +230,10 @@ function animate(timestamp) {
     gl.uniform1f(u_b_coef, b_coef);
     const u_c_coef = gl.getUniformLocation(program, "u_c_coef");
     gl.uniform1f(u_c_coef, c_coef);
+    const u_x_ratio = gl.getUniformLocation(program, "u_x_ratio");
+    gl.uniform1f(u_x_ratio, x_ratio);
+    const u_y_ratio = gl.getUniformLocation(program, "u_y_ratio");
+    gl.uniform1f(u_y_ratio, y_ratio);
 
     gl.bindVertexArray(vao);
     gl.drawArrays(gl.POINTS, 0, MAX_POINTS);
