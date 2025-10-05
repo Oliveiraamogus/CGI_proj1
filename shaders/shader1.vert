@@ -14,42 +14,37 @@ uniform float u_dimensions;
 uniform float u_y_ratio;*/
 
 void main() {
-    //vec2 p = vec2(cos(a_index) * 0.5f, sin(a_index) * 0.5f);
-    //gl_Position = vec4(cos((float) a_index ) * 0.5f, sin (float) a_index ) * 0.5f, 0.0f, 1.0f);
-    /*if (u_curve_type == 1) {
-
-        gl_Position = vec4(cos(float(a_index)) * 0.5f, sin(float(a_index)) * 0.5f, 0.0f, 1.0f);
-        gl_PointSize = 5.0f;
-    }*/
 
     float t = (float(a_index) / float(u_max_points)) * u_t_max;
-    float x;
-    float y;
+    float x, y;
+    float a = u_a_coef;
+    float b = u_b_coef;
+    float c = u_c_coef;
     float e = 2.718281828459045f;
     switch(u_curve_type) {
         case 1:
-            x = cos(u_a_coef * t) + cos(u_b_coef * t) / 2.0f + sin(u_c_coef * t) / 3.0f;
-            y = cos(u_a_coef * t) + cos(u_b_coef * t) / 2.0f + sin(u_c_coef * t) / 3.0f;
+            x = cos(a * t) + cos(b * t) / 2.0f + sin(c * t) / 3.0f;
+            y = sin(a * t) + sin(b * t) / 2.0f + cos(c * t) / 3.0f;
             break;
         case 2:
-            x = (cos(u_a_coef * t) + (cos(u_b_coef * t) * cos(u_b_coef * t) * cos(u_b_coef * t))) * 2.0f;
-            y = (sin(u_a_coef * t) + (sin(u_b_coef * t) * sin(u_b_coef * t) * sin(u_b_coef * t))) * 2.0f;
+            x = 2.0f * (cos(a * t) + pow(cos(b * t), 3.0f));
+            y = 2.0f * (sin(a * t) + pow(sin(b * t), 3.0f));
             break;
         case 3:
-            x = cos(u_a_coef * t) * sin(sin(u_a_coef * t));
-            y = sin(u_a_coef * t) * cos(cos(u_b_coef * t));
+            x = cos(a * t) * sin(sin(a * t));
+            y = sin(a * t) * cos(cos(b * t));
             break;
         case 4:
-            x = cos(u_a_coef * t) * cos(u_b_coef * t);
-            y = sin(cos(u_a_coef * t));
+            x = cos(a * t) * cos(b * t);
+            y = sin(cos(a * t));
             break;
         case 5:
-            x = sin(u_a_coef * t) * (pow(e, cos(u_a_coef * t)) - 2.0f * cos(u_b_coef * t));
-            y = cos(u_a_coef * t) * (pow(e, cos(u_a_coef * t)) - 2.0f * cos(u_b_coef * t));
+            x = sin(a * t) * (pow(e, cos(a * t)) - 2.0f * cos(b * t));
+            y = cos(a * t) * (pow(e, cos(a * t)) - 2.0f * cos(b * t));
             break;
         case 6:
-            x = (u_a_coef - u_b_coef) * cos(u_b_coef * t) + cos((u_a_coef * t) - (u_b_coef * t));
-            y = (u_a_coef - u_b_coef) * sin(u_b_coef * t) - sin((u_a_coef * t) - (u_b_coef * t));
+            x = (a - b) * cos(b * t) + cos((a * t) - (b * t));
+            y = (a - b) * sin(b * t) - sin((a * t) - (b * t));
             break;
     }
     /*x = x * u_x_ratio;
