@@ -57,8 +57,8 @@ void main() {
             gl_PointSize = 5.0f;
             break;
         case 6:
-            x = (u_a_coef - u_b_coef)cos(u_b_coef * t) + cos((u_a_coef * t) - (u_b_coef * t));
-            y = (u_a_coef - u_b_coef)sin(u_b_coef * t) - sin((u_a_coef * t) - (u_b_coef * t));
+            x = (u_a_coef - u_b_coef) * cos(u_b_coef * t) + cos((u_a_coef * t) - (u_b_coef * t));
+            y = (u_a_coef - u_b_coef) * sin(u_b_coef * t) - sin((u_a_coef * t) - (u_b_coef * t));
             gl_Position = vec4(x, y, 0.0f, 1.0f);
             gl_PointSize = 5.0f;
             break;
