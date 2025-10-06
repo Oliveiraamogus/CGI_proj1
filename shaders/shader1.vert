@@ -47,8 +47,6 @@ void main() {
             y = (a - b) * sin(b * t) - sin((a * t) - (b * t));
             break;
     }
-    /*x = x * u_x_ratio;
-    y = y * u_y_ratio;*/
     x /= u_dimensions;
     gl_Position = vec4(x, y, 0.0f, 1.0f);
     gl_PointSize = 5.0f;

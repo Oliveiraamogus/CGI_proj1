@@ -19,8 +19,6 @@ function resize(target) {
     const width = target.innerWidth;
     const height = target.innerHeight;
 
-    /*x_ratio = width / canvas.width;
-    y_ratio = height / canvas.height;*/
     // Set canvas size to occupy the entire window
     canvas.width = width;
     canvas.height = height;
@@ -41,107 +39,124 @@ function setup(shaders) {
     // Create WebGL programs
     program = buildProgramFromSources(gl, shaders["shader1.vert"], shaders["shader1.frag"]);
 
-    // Handle increasing points event
+    
     document.addEventListener("keydown", function (event) {
-        if (event.key === "r") { // reset 
-            a_coef = 1.0;
-            b_coef = 1.0;
-            c_coef = 0.0;
-            MAX_POINTS = 60000;
-            current_coef = 'a';
-        }
-        if (event.key === "1") {
-            curve_type = 1;
-        }
-        if (event.key === "2") {
-            curve_type = 2;
-        }
-        if (event.key === "3") {
-            curve_type = 3;
-        }
-        if (event.key === "4") {
-            curve_type = 4;
-        }
-        if (event.key === "5") {
-            curve_type = 5;
-        }
-        if (event.key === "6") {
-            curve_type = 6;
-        }
-        if (event.key === "PageUp") {
-            if (MAX_POINTS != 60000)
-                MAX_POINTS += 500;
-            console.log(MAX_POINTS);
-        }
-        // Handle decreasing points event
-        if (event.key === "PageDown") {
-            if (MAX_POINTS != 0)
-                MAX_POINTS -= 500
-            console.log(MAX_POINTS)
-        }
-        // Handle arrow up key events 
-        if (event.key === "ArrowUp") {
-            switch (current_coef) {
-                case 'a':
-                    a_coef += 0.01;
-                    break;
-                case 'b':
-                    b_coef += 0.01;
-                    break;
-                case 'c':
-                    c_coef += 0.01;
-                    break;
-                default:
-                    print("out of bounds on the coeffs");//debug only this should never be reached
-            }
-        }
-        // Handle arrow down key events 
-        if (event.key === "ArrowDown") {
-            switch (current_coef) {
-                case 'a':
-                    a_coef -= 0.01;
-                    break;
-                case 'b':
-                    b_coef -= 0.01;
-                    break;
-                case 'c':
-                    c_coef -= 0.01;
-                    break;
-                default:
-                    print("out of bounds on the coeffs");//debug only this should never be reached
-            }
-        }
-        if (event.key === "ArrowLeft") {
-            switch (current_coef) {
-                case 'a':
-                    current_coef = 'c';
-                    break;
-                case 'b':
-                    current_coef = 'a';
-                    break;
-                case 'c':
-                    current_coef = 'b';
-                    break;
-                default:
-                    print("out of bounds on the coeffs");//debug only this should never be reached
-            }
-        }
+        switch (event.key){
+            case "space":
 
-        if (event.key === "ArrowRight") {
-            switch (current_coef) {
-                case 'a':
-                    current_coef = 'b';
-                    break;
-                case 'b':
-                    current_coef = 'c';
-                    break;
-                case 'c':
-                    current_coef = 'a';
-                    break;
-                default:
-                    print("out of bounds on the coeffs");//debug only this should never be reached
-            }
+                break;
+            case "r": // reset 
+                a_coef = 1.0;
+                b_coef = 1.0;
+                c_coef = 0.0;
+                MAX_POINTS = 60000;
+                current_coef = 'a';
+                break;
+            
+            case "1":
+                curve_type = 1;
+                break;
+            case  "2":
+                curve_type = 2;
+                break;
+            case "3":
+                curve_type = 3;
+                break;
+            case "4":
+                curve_type = 4;
+                break;
+            case "5":
+                curve_type = 5;
+                break;
+            case "6":
+                curve_type = 6;
+                break;
+            case "PageUp":
+                if (MAX_POINTS != 60000)
+                    MAX_POINTS += 500;
+                console.log(MAX_POINTS);
+                break;
+            // Handle decreasing points event
+            case "PageDown":
+                if (MAX_POINTS != 0)
+                    MAX_POINTS -= 500
+                console.log(MAX_POINTS)
+                break;
+            // Handle arrow up key events 
+            case "ArrowUp":
+                switch (current_coef) {
+                    case 'a':
+                        a_coef += 0.01;
+                        break;
+                    case 'b':
+                        b_coef += 0.01;
+                        break;
+                    case 'c':
+                        c_coef += 0.01;
+                        break;
+                    default:
+                        print("out of bounds on the coeffs");//debug only this should never be reached
+                }
+                break;
+            // Handle arrow down key events 
+            case "ArrowDown":
+                switch (current_coef) {
+                    case 'a':
+                        a_coef -= 0.01;
+                        break;
+                    case 'b':
+                        b_coef -= 0.01;
+                        break;
+                    case 'c':
+                        c_coef -= 0.01;
+                        break;
+                    default:
+                        print("out of bounds on the coeffs");//debug only this should never be reached
+                }
+                break;
+            case "ArrowLeft":
+                switch (current_coef) {
+                    case 'a':
+                        current_coef = 'c';
+                        break;
+                    case 'b':
+                        current_coef = 'a';
+                        break;
+                    case 'c':
+                        current_coef = 'b';
+                        break;
+                    default:
+                        print("out of bounds on the coeffs");//debug only this should never be reached
+                }
+                break;
+
+            case "ArrowRight":
+                switch (current_coef) {
+                    case 'a':
+                        current_coef = 'b';
+                        break;
+                    case 'b':
+                        current_coef = 'c';
+                        break;
+                    case 'c':
+                        current_coef = 'a';
+                        break;
+                    default:
+                        print("out of bounds on the coeffs");//debug only this should never be reached
+                }
+                break;
         }
+    });
+
+
+    document.addEventListener('wheel', (event) => {
+        x = canvas.width;
+        y = canvas.height;
+        canvas.width -= event.deltaY;
+        canvas.height -= event.deltaY;
+        //my_resizefunc();
+        //resize(window);
+        //gl.viewport(0, 0, canvas.width, canvas.height);
     });
 
 
@@ -166,60 +181,6 @@ function setup(shaders) {
     gl.vertexAttribIPointer(a_index, 1, gl.UNSIGNED_INT, 0, 0);
     gl.enableVertexAttribArray(a_index);
 
-    /*
-        const curve_type_Buffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, curve_type_Buffer);
-        gl.bufferData(gl.ARRAY_BUFFER, curve_type, gl.STATIC_DRAW);
-    
-        const a_curve_type = gl.getAttribLocation(program, "a_curve_type");
-        gl.vertexAttribIPointer(a_curve_type, 1, gl.UNSIGNED_INT, 0, 0);
-        gl.enableVertexAttribArray(a_curve_type);
-    
-    
-        const tmin_Buffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, tmin_Buffer);
-        gl.bufferData(gl.ARRAY_BUFFER, gl.uniform1f(t_min), gl.STATIC_DRAW);
-    
-        const a_t_min = gl.getAttribLocation(program, "a_t_min");
-        gl.vertexAttribIPointer(a_t_min, 1, gl.FLOAT, 0, 0);
-        gl.enableVertexAttribArray(a_t_min);
-    
-    
-        const tmax_Buffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, tmax_Buffer);
-        gl.bufferData(gl.ARRAY_BUFFER, t_max, gl.STATIC_DRAW);
-    
-        const a_t_max = gl.getAttribLocation(program, "a_t_max");
-        gl.vertexAttribIPointer(a_t_max, 1, gl.FLOAT, 0, 0);
-        gl.enableVertexAttribArray(a_t_max);
-    
-    
-        const a_coef_Buffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, a_coef_Buffer);
-        gl.bufferData(gl.ARRAY_BUFFER, a_coef, gl.STATIC_DRAW);
-    
-        const a_a_coef = gl.getAttribLocation(program, "a_a_coef");
-        gl.vertexAttribIPointer(a_a_coef, 1, gl.FLOAT, 0, 0);
-        gl.enableVertexAttribArray(a_a_coef);
-    
-    
-        const b_coef_Buffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, b_coef_Buffer);
-        gl.bufferData(gl.ARRAY_BUFFER, b_coef, gl.STATIC_DRAW);
-    
-        const a_b_coef = gl.getAttribLocation(program, "a_b_coef");
-        gl.vertexAttribIPointer(a_b_coef, 1, gl.FLOAT, 0, 0);
-        gl.enableVertexAttribArray(a_b_coef);
-    
-    
-        const c_coef_Buffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, c_coef_Buffer);
-        gl.bufferData(gl.ARRAY_BUFFER, c_coef, gl.STATIC_DRAW);
-    
-        const a_c_coef = gl.getAttribLocation(program, "a_c_coef");
-        gl.vertexAttribIPointer(a_c_coef, 1, gl.FLOAT, 0, 0);
-        gl.enableVertexAttribArray(a_c_coef);
-    */
 
     gl.bindVertexArray(null);
     //gl.bindBuffer(gl.ARRAY_BUFFER, null);
@@ -276,10 +237,6 @@ function animate(timestamp) {
     gl.uniform1f(u_b_coef, b_coef);
     const u_c_coef = gl.getUniformLocation(program, "u_c_coef");
     gl.uniform1f(u_c_coef, c_coef);
-    /*const u_x_ratio = gl.getUniformLocation(program, "u_x_ratio");
-    gl.uniform1f(u_x_ratio, x_ratio);
-    const u_y_ratio = gl.getUniformLocation(program, "u_y_ratio");
-    gl.uniform1f(u_y_ratio, y_ratio);*/
 
     gl.bindVertexArray(vao);
     gl.drawArrays(gl.POINTS, 0, MAX_POINTS);
