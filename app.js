@@ -16,6 +16,11 @@ let current_coef = 'a';
 let is_animating = false;
 let previous_timestamp = null;
 const inc_speed = 0.5;
+let size = 2.00;
+let offsetX = 0.00;
+let offsetY = 0.00;
+let x = 0.00;
+let y = 0.00;
 
 function resize(target) {
     // Aquire the new window dimensions
@@ -56,6 +61,7 @@ function setup(shaders) {
                 current_coef = 'a';
                 is_animating = false;
                 break;
+
 
             case "1":
                 curve_type = 1;
@@ -153,6 +159,7 @@ function setup(shaders) {
                         print("out of bounds on the coeffs");//debug only this should never be reached
                 }
                 break;
+
         }
     });
 
@@ -166,6 +173,30 @@ function setup(shaders) {
         //resize(window);
         //gl.viewport(0, 0, canvas.width, canvas.height);
     });*/
+    document.addEventListener('wheel', function (event) {
+        size += (event.deltaY / 1000);
+    });
+
+    var allowed = false;
+    document.addEventListener('mousedown', function (event) {
+        x = event.clientX;
+        y = event.clientY;
+        allowed = true;
+    });
+    document.addEventListener('mousemove', function (event) {
+        if (allowed) {
+
+
+            offsetX = ((event.clientX - x) / canvas.width) + x / 100;
+            console.log(offsetX);
+            offsetY = ((y - event.clientY) / canvas.height) + y / 100;
+        }
+    });
+    document.addEventListener('mouseup', function (event) {
+        x = offsetX;
+        y = offsetY;
+        allowed = false;
+    });
 
 
     const indexes = [];
@@ -269,6 +300,12 @@ function animate(timestamp) {
     gl.uniform1f(u_b_coef, b_coef);
     const u_c_coef = gl.getUniformLocation(program, "u_c_coef");
     gl.uniform1f(u_c_coef, c_coef);
+    const u_size = gl.getUniformLocation(program, "u_size");
+    gl.uniform1f(u_size, size);
+    const u_offsetX = gl.getUniformLocation(program, "u_offsetX");
+    gl.uniform1f(u_offsetX, offsetX);
+    const u_offsetY = gl.getUniformLocation(program, "u_offsetY");
+    gl.uniform1f(u_offsetY, offsetY);
 
     gl.bindVertexArray(vao);
     gl.drawArrays(gl.POINTS, 0, MAX_POINTS);

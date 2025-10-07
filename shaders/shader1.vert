@@ -10,6 +10,9 @@ uniform float u_a_coef;
 uniform float u_b_coef;
 uniform float u_c_coef;
 uniform float u_dimensions;
+uniform float u_size;
+uniform float u_offsetX;
+uniform float u_offsetY;
 /*uniform float u_x_ratio;
 uniform float u_y_ratio;*/
 
@@ -50,6 +53,10 @@ void main() {
             break;
     }
     x /= u_dimensions;
+    x /= u_size;
+    y /= u_size;
+    x += u_offsetX;
+    y += u_offsetY;
     gl_Position = vec4(x, y, 0.0f, 1.0f);
 
     v_hue = float(a_index) / float(u_max_points); // hue in [0,1]
