@@ -13,6 +13,8 @@ uniform float u_dimensions;
 /*uniform float u_x_ratio;
 uniform float u_y_ratio;*/
 
+out float v_hue; // normalized hue to send to frag shader
+
 void main() {
 
     float t = (float(a_index) / float(u_max_points)) * u_t_max;
@@ -49,5 +51,8 @@ void main() {
     }
     x /= u_dimensions;
     gl_Position = vec4(x, y, 0.0f, 1.0f);
+
+    v_hue = float(a_index) / float(u_max_points); // hue in [0,1]
+
     gl_PointSize = 5.0f;
 }

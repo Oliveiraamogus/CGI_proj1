@@ -13,6 +13,9 @@ let a_coef = 1.00;
 let b_coef = 1.00;
 let c_coef = 0.00;
 let current_coef = 'a';
+let is_animating = false;
+let previous_timestamp = null;
+const inc_speed = 0.5;
 
 function resize(target) {
     // Aquire the new window dimensions
@@ -39,11 +42,11 @@ function setup(shaders) {
     // Create WebGL programs
     program = buildProgramFromSources(gl, shaders["shader1.vert"], shaders["shader1.frag"]);
 
-    
-    document.addEventListener("keydown", function (event) {
-        switch (event.key){
-            case "space":
 
+    document.addEventListener("keydown", function (event) {
+        switch (event.key) {
+            case " ":
+                is_animating = !is_animating;
                 break;
             case "r": // reset 
                 a_coef = 1.0;
@@ -51,12 +54,13 @@ function setup(shaders) {
                 c_coef = 0.0;
                 MAX_POINTS = 60000;
                 current_coef = 'a';
+                is_animating = false;
                 break;
-            
+
             case "1":
                 curve_type = 1;
                 break;
-            case  "2":
+            case "2":
                 curve_type = 2;
                 break;
             case "3":
@@ -84,6 +88,8 @@ function setup(shaders) {
                 break;
             // Handle arrow up key events 
             case "ArrowUp":
+                if (is_animating)
+                    is_animating = false;
                 switch (current_coef) {
                     case 'a':
                         a_coef += 0.01;
@@ -100,6 +106,8 @@ function setup(shaders) {
                 break;
             // Handle arrow down key events 
             case "ArrowDown":
+                if (is_animating)
+                    is_animating = false;
                 switch (current_coef) {
                     case 'a':
                         a_coef -= 0.01;
@@ -149,7 +157,7 @@ function setup(shaders) {
     });
 
 
-    document.addEventListener('wheel', (event) => {
+    /*document.addEventListener('wheel', (event) => {
         x = canvas.width;
         y = canvas.height;
         canvas.width -= event.deltaY;
@@ -157,7 +165,7 @@ function setup(shaders) {
         //my_resizefunc();
         //resize(window);
         //gl.viewport(0, 0, canvas.width, canvas.height);
-    });
+    });*/
 
 
     const indexes = [];
@@ -194,17 +202,15 @@ function setup(shaders) {
         resize(event.target);
     });
 
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
     // Handle mouse move events 
     window.addEventListener("mousemove", (event) => {
         //resize(event.target);
     });
 
-
-
-    gl.clearColor(0.0, 0.0, 0.0, 1.0);
-
     window.requestAnimationFrame(animate);
+
 }
 
 function my_resizefunc() {
@@ -214,6 +220,26 @@ function my_resizefunc() {
 }
 
 function animate(timestamp) {
+    if (previous_timestamp == null) previous_timestamp = timestamp;
+    // delta time: period between this frame and the last
+    // fixes velocity to be linear
+    const dt = (timestamp - previous_timestamp) * 0.001;
+    previous_timestamp = timestamp;
+
+    if (is_animating) {
+        switch (current_coef) {
+            case 'a':
+                a_coef += dt * inc_speed;
+                break;
+            case 'b':
+                b_coef += dt * inc_speed;
+                break;
+            case 'c':
+                c_coef += dt * inc_speed;
+                break;
+        }
+    }
+
     window.requestAnimationFrame(animate);
 
 
@@ -221,6 +247,12 @@ function animate(timestamp) {
 
     gl.useProgram(program);
     my_resizefunc();
+
+    const u_now = gl.getUniformLocation(program, "u_now");
+    gl.uniform1f(u_now, performance.now() * 0.001);
+
+    const u_speed = gl.getUniformLocation(program, "u_speed");
+    gl.uniform1f(u_speed, 0.5);
 
     const u_curve_type = gl.getUniformLocation(program, "u_curve_type");
     gl.uniform1i(u_curve_type, curve_type);
