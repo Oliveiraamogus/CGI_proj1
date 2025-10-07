@@ -31,8 +31,6 @@ function resize(target) {
     canvas.width = width;
     canvas.height = height;
 
-    canvas.style.width = width;
-    canvas.style.height = height;
     gl.aspect = true;
     // Set the WebGL viewport to fill the canvas completely
     gl.viewport(0, 0, width, height);
@@ -43,6 +41,7 @@ function resize(target) {
 function setup(shaders) {
     canvas = document.getElementById("gl-canvas");
     gl = setupWebGL(canvas, { alpha: true, preserveDrawingBuffer: false });
+
 
     // Create WebGL programs
     program = buildProgramFromSources(gl, shaders["shader1.vert"], shaders["shader1.frag"]);
@@ -60,9 +59,12 @@ function setup(shaders) {
                 MAX_POINTS = 60000;
                 current_coef = 'a';
                 is_animating = false;
+                size = 2.00;
+                offsetX = 0.00;
+                offsetY = 0.00;
+                x = 0.00;
+                y = 0.00;
                 break;
-
-
             case "1":
                 curve_type = 1;
                 break;
@@ -88,9 +90,8 @@ function setup(shaders) {
                 break;
             // Handle decreasing points event
             case "PageDown":
-                if (MAX_POINTS != 0)
+                if (MAX_POINTS != 0 && MAX_POINTS > 500)
                     MAX_POINTS -= 500
-                console.log(MAX_POINTS)
                 break;
             // Handle arrow up key events 
             case "ArrowUp":
@@ -163,33 +164,22 @@ function setup(shaders) {
         }
     });
 
-
-    /*document.addEventListener('wheel', (event) => {
-        x = canvas.width;
-        y = canvas.height;
-        canvas.width -= event.deltaY;
-        canvas.height -= event.deltaY;
-        //my_resizefunc();
-        //resize(window);
-        //gl.viewport(0, 0, canvas.width, canvas.height);
-    });*/
     document.addEventListener('wheel', function (event) {
         size += (event.deltaY / 1000);
     });
 
     var allowed = false;
+    var earlyX, earlyY;
     document.addEventListener('mousedown', function (event) {
-        x = event.clientX;
-        y = event.clientY;
+        earlyX = event.clientX;
+        earlyY = event.clientY;
         allowed = true;
     });
     document.addEventListener('mousemove', function (event) {
         if (allowed) {
-
-
-            offsetX = ((event.clientX - x) / canvas.width) + x / 100;
+            offsetX = (((event.clientX - earlyX) / canvas.width) * 2 + x);
             console.log(offsetX);
-            offsetY = ((y - event.clientY) / canvas.height) + y / 100;
+            offsetY = (((earlyY - event.clientY) / canvas.height) * 2 + y);
         }
     });
     document.addEventListener('mouseup', function (event) {
@@ -235,11 +225,6 @@ function setup(shaders) {
 
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
-    // Handle mouse move events 
-    window.addEventListener("mousemove", (event) => {
-        //resize(event.target);
-    });
-
     window.requestAnimationFrame(animate);
 
 }
@@ -251,6 +236,17 @@ function my_resizefunc() {
 }
 
 function animate(timestamp) {
+
+    var curve = document.getElementById("curve_id");
+    curve.innerHTML = curve_type;
+    var t_min_id = document.getElementById("tmin_id");
+    t_min_id.innerHTML = t_min.toFixed(2);
+    var t_max_id = document.getElementById("tmax_id");
+    t_max_id.innerHTML = t_max.toFixed(2);
+    var coefs = document.getElementById("coefs_id");
+    coefs.innerHTML = [a_coef.toFixed(2), b_coef.toFixed(2), c_coef.toFixed(2)];
+
+
     if (previous_timestamp == null) previous_timestamp = timestamp;
     // delta time: period between this frame and the last
     // fixes velocity to be linear
