@@ -14,6 +14,7 @@ let b_coef = 1.00;
 let c_coef = 0.00;
 let current_coef = 'a';
 let is_animating = false;
+let line_strip = false;
 let previous_timestamp = null;
 const inc_speed = 0.5;
 let size = 2.00;
@@ -37,25 +38,105 @@ function resize(target) {
     //gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
 }
 
+function reset_defaults() {
+    switch (curve_type) {
+    case 1:
+        a_coef = 1.0;
+        b_coef = 1.0;
+        c_coef = 0.0;
+        t_min = 0;
+        t_max = Math.PI * 2;
+        break;
+    case 2:
+        a_coef = 1.0;
+        b_coef = 17.0;
+        c_coef = 0.0;
+        t_min = 0;
+        t_max = Math.PI * 2;
+        break;
+    case 3:
+        a_coef = 1.0;
+        b_coef = 8.6;
+        c_coef = 0.0;
+        t_min = 0;
+        t_max = Math.PI * 10;
+        break;
+    case 4:
+        a_coef = 7.6;
+        b_coef = 5.1;
+        c_coef = 0.0;
+        t_min = 0;
+        t_max = 10;
+        break;
+    case 5:
+        a_coef = 1.0;
+        b_coef = 4.0;
+        c_coef = 0.0;
+        t_min = 0;
+        t_max = 10;
+        break;
+    case 6:
+        a_coef = 4.0;
+        b_coef = 1.0;
+        c_coef = 0.0;
+        t_min = 0;
+        t_max = Math.PI * 2;
+        break;
+    }
+}
 
-function setup(shaders) {
-    canvas = document.getElementById("gl-canvas");
-    gl = setupWebGL(canvas, { alpha: true, preserveDrawingBuffer: false });
+//handles all the mouse interactions
+function mouse() {
+    //handles zooming and general wheel interactions
+    document.addEventListener('wheel', function (event) {
+        size += (event.deltaY / 1000);
+    });
 
+    //detects when the mouse is clicked
+    var allowed = false;
+    var earlyX, earlyY;
+    document.addEventListener('mousedown', function (event) {
+        earlyX = event.clientX;
+        earlyY = event.clientY;
+        allowed = true;
+    });
 
-    // Create WebGL programs
-    program = buildProgramFromSources(gl, shaders["shader1.vert"], shaders["shader1.frag"]);
+    //moves the canvas acording to the movement of the mouse
+    document.addEventListener('mousemove', function (event) {
+        if (allowed) {
+            offsetX = (((event.clientX - earlyX) / canvas.width) * 2);
+            console.log(offsetX);
+            offsetY = (((earlyY - event.clientY) / canvas.height) * 2);
+        }
+    });
 
+    
+    //detects when the mouse is no longer pressed
+    document.addEventListener('mouseup', function (event) {
+        x = offsetX;
+        y = offsetY;
+        allowed = false;
+    });
+}
 
+//handles all the keyboard events
+function keyboard() {
     document.addEventListener("keydown", function (event) {
         switch (event.key) {
             case " ":
                 is_animating = !is_animating;
                 break;
+            case "p":
+                if (line_strip) {
+                    line_strip = false;
+                }
+                else {
+                    line_strip = true;
+                }
+                break;
             case "r": // reset 
-                a_coef = 1.0;
-                b_coef = 1.0;
-                c_coef = 0.0;
+                reset_defaults();
+
                 MAX_POINTS = 60000;
                 current_coef = 'a';
                 is_animating = false;
@@ -67,33 +148,42 @@ function setup(shaders) {
                 break;
             case "1":
                 curve_type = 1;
+                reset_defaults();
                 break;
             case "2":
                 curve_type = 2;
+                reset_defaults();
                 break;
             case "3":
                 curve_type = 3;
+                reset_defaults();
                 break;
             case "4":
                 curve_type = 4;
+                reset_defaults();
                 break;
             case "5":
                 curve_type = 5;
+                reset_defaults();
                 break;
             case "6":
                 curve_type = 6;
+                reset_defaults();
                 break;
             case "PageUp":
+                t_max += 0.01;
+                break;
+            case "PageDown":
+                t_max -= 0.01;
+            case "+":
                 if (MAX_POINTS != 60000)
                     MAX_POINTS += 500;
                 console.log(MAX_POINTS);
                 break;
-            // Handle decreasing points event
-            case "PageDown":
+            case "-":
                 if (MAX_POINTS != 0 && MAX_POINTS > 500)
                     MAX_POINTS -= 500
                 break;
-            // Handle arrow up key events 
             case "ArrowUp":
                 if (is_animating)
                     is_animating = false;
@@ -111,7 +201,6 @@ function setup(shaders) {
                         print("out of bounds on the coeffs");//debug only this should never be reached
                 }
                 break;
-            // Handle arrow down key events 
             case "ArrowDown":
                 if (is_animating)
                     is_animating = false;
@@ -164,33 +253,26 @@ function setup(shaders) {
         }
     });
 
-    document.addEventListener('wheel', function (event) {
-        size += (event.deltaY / 1000);
-    });
+}
 
-    var allowed = false;
-    var earlyX, earlyY;
-    document.addEventListener('mousedown', function (event) {
-        earlyX = event.clientX;
-        earlyY = event.clientY;
-        allowed = true;
-    });
-    document.addEventListener('mousemove', function (event) {
-        if (allowed) {
-            offsetX = (((event.clientX - earlyX) / canvas.width) * 2 + x);
-            console.log(offsetX);
-            offsetY = (((earlyY - event.clientY) / canvas.height) * 2 + y);
-        }
-    });
-    document.addEventListener('mouseup', function (event) {
-        x = offsetX;
-        y = offsetY;
-        allowed = false;
-    });
+
+function setup(shaders) {
+    canvas = document.getElementById("gl-canvas");
+    gl = setupWebGL(canvas, { alpha: true, preserveDrawingBuffer: false });
+
+
+    // Create WebGL programs
+    program = buildProgramFromSources(gl, shaders["shader1.vert"], shaders["shader1.frag"]);
+
+
+    keyboard();
+
+    mouse();
 
 
     const indexes = [];
 
+    //generates all the indexes for all the points
     function generatePoints(npoints) {
         for (let i = 0; i < npoints; i++) {
             indexes[i] = i;
@@ -212,10 +294,7 @@ function setup(shaders) {
 
 
     gl.bindVertexArray(null);
-    //gl.bindBuffer(gl.ARRAY_BUFFER, null);
-
-    //const u_t = gl.getUniformLocation(program, "u_t")
-
+    
     resize(window);
 
     // Handle resize events 
@@ -223,6 +302,7 @@ function setup(shaders) {
         resize(event.target);
     });
 
+    //sets the background color
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
     window.requestAnimationFrame(animate);
@@ -304,7 +384,12 @@ function animate(timestamp) {
     gl.uniform1f(u_offsetY, offsetY);
 
     gl.bindVertexArray(vao);
-    gl.drawArrays(gl.POINTS, 0, MAX_POINTS);
+    if (line_strip) {
+        gl.drawArrays(gl.LINE_STRIP, 0, MAX_POINTS);
+    }
+    else {
+        gl.drawArrays(gl.POINTS, 0, MAX_POINTS);
+    }
     gl.bindVertexArray(null);
 
 
