@@ -1,6 +1,5 @@
 #version 300 es
 
-//precision mediump float;
 in uint a_index;
 uniform int u_max_points;
 uniform int u_curve_type;
@@ -13,8 +12,6 @@ uniform float u_dimensions;
 uniform float u_size;
 uniform float u_offsetX;
 uniform float u_offsetY;
-/*uniform float u_x_ratio;
-uniform float u_y_ratio;*/
 
 out float v_hue; // normalized hue to send to frag shader
 

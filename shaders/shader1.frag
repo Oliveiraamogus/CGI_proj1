@@ -1,7 +1,6 @@
 #version 300 es
 
 precision mediump float;
-//in uint a_index;
 
 in float v_hue;
 uniform float u_now;

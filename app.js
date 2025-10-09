@@ -17,25 +17,34 @@ let is_animating = false;
 let line_strip = false;
 let previous_timestamp = null;
 const inc_speed = 0.5;
+const variation = 0.01;
 let size = 2.00;
 let offsetX = 0.00;
 let offsetY = 0.00;
 let x = 0.00;
 let y = 0.00;
+let allowed = false;
+let earlyX, earlyY;
+const locs = {};
+
+function handle_u_locs() {
+    const names = [
+        "u_now", "u_speed", "u_curve_type", "u_max_points",
+        "u_t_min", "u_t_max", "u_a_coef", "u_b_coef", "u_c_coef",
+        "u_size", "u_offsetX", "u_offsetY", "u_dimensions"
+    ];
+    names.forEach(i => locs[i] = gl.getUniformLocation(program, i));
+}
 
 function resize(target) {
-    // Aquire the new window dimensions
     const width = target.innerWidth;
     const height = target.innerHeight;
 
-    // Set canvas size to occupy the entire window
     canvas.width = width;
     canvas.height = height;
 
     gl.aspect = true;
-    // Set the WebGL viewport to fill the canvas completely
     gl.viewport(0, 0, width, height);
-    //gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
 }
 
 function reset_defaults() {
@@ -83,25 +92,29 @@ function reset_defaults() {
             t_max = Math.PI * 2;
             break;
     }
+    current_coef = 'a';
+    size = 2.00;
+    offsetX = 0.00;
+    offsetY = 0.00;
+    x = 0.00;
+    y = 0.00;
 }
 
-//handles all the mouse interactions
-function mouse() {
-    //handles zooming and general wheel interactions
+// Handles all the mouse interactions
+function handle_mouse_events() {
+    // Handles zooming and general wheel interactions
     document.addEventListener('wheel', function (event) {
         size += (event.deltaY / 1000);
     });
 
-    //detects when the mouse is clicked
-    var allowed = false;
-    var earlyX, earlyY;
+    // Detects when the mouse is clicked
     document.addEventListener('mousedown', function (event) {
         earlyX = event.clientX;
         earlyY = event.clientY;
         allowed = true;
     });
 
-    //moves the canvas acording to the movement of the mouse
+    // Moves the canvas acording to the movement of the mouse
     document.addEventListener('mousemove', function (event) {
         if (allowed) {
             offsetX = (((event.clientX - earlyX) / canvas.width) * 2) + x;
@@ -111,8 +124,8 @@ function mouse() {
     });
 
 
-    //detects when the mouse is no longer pressed
-    document.addEventListener('mouseup', function (event) {
+    // Detects when the mouse is no longer pressed
+    document.addEventListener('mouseup', function () {
         x = offsetX;
         y = offsetY;
         allowed = false;
@@ -120,105 +133,93 @@ function mouse() {
 }
 
 //handles all the keyboard events
-function keyboard() {
+function handle_keyboard_events() {
     document.addEventListener("keydown", function (event) {
         switch (event.key) {
-            case " ":
+            case " ": // Space bar: starts animating the curve
                 is_animating = !is_animating;
                 break;
-            case "p":
-                if (line_strip) {
-                    line_strip = false;
-                }
-                else {
-                    line_strip = true;
-                }
+            case "p": // Letter p: toggle Lines/Points
+                line_strip = !line_strip;
                 break;
-            case "r": // reset 
+            case "r": // Letter r: resets configurations
                 reset_defaults();
-
                 MAX_POINTS = 60000;
-                current_coef = 'a';
                 is_animating = false;
-                size = 2.00;
-                offsetX = 0.00;
-                offsetY = 0.00;
-                x = 0.00;
-                y = 0.00;
                 break;
-            case "1":
+            case "1": // Number 1: Curve's Family 1
                 curve_type = 1;
                 reset_defaults();
                 break;
-            case "2":
+            case "2": // Number 2: Curve's Family 2
                 curve_type = 2;
                 reset_defaults();
                 break;
-            case "3":
+            case "3": // Number 3: Curve's Family 3
                 curve_type = 3;
                 reset_defaults();
                 break;
-            case "4":
+            case "4": // Number 4: Curve's Family 4
                 curve_type = 4;
                 reset_defaults();
                 break;
-            case "5":
+            case "5": // Number 5: Curve's Family 5
                 curve_type = 5;
                 reset_defaults();
                 break;
-            case "6":
+            case "6": // Number 6: Curve's Family 6
                 curve_type = 6;
                 reset_defaults();
                 break;
-            case "PageUp":
+            case "PageUp": // PageUp key: increments t max
                 t_max += 0.01;
                 break;
-            case "PageDown":
+            case "PageDown": // PageDown key: decrements t max
                 t_max -= 0.01;
-            case "+":
+            case "+": // + key: increments samples (points). Minimum 500 samples displayed.
                 if (MAX_POINTS != 60000)
                     MAX_POINTS += 500;
                 console.log(MAX_POINTS);
                 break;
-            case "-":
+            case "-": // - key: decrements samples (points). Maximum 60000 samples displayed.
                 if (MAX_POINTS != 0 && MAX_POINTS > 500)
                     MAX_POINTS -= 500
                 break;
-            case "ArrowUp":
+            case "ArrowUp": // Arrow up key: increments the selected coefficient
                 if (is_animating)
                     is_animating = false;
                 switch (current_coef) {
                     case 'a':
-                        a_coef += 0.01;
+                        a_coef += variation;
                         break;
                     case 'b':
-                        b_coef += 0.01;
+                        b_coef += variation;
                         break;
                     case 'c':
-                        c_coef += 0.01;
+                        c_coef += variation;
                         break;
-                    default:
-                        print("out of bounds on the coeffs");//debug only this should never be reached
+                    default: // Debug only; this should never be reached.
+                        console.log("out of bounds on the coeffs");
                 }
                 break;
-            case "ArrowDown":
+            case "ArrowDown": // Arrow down key: decrements the selected coefficient
                 if (is_animating)
                     is_animating = false;
                 switch (current_coef) {
                     case 'a':
-                        a_coef -= 0.01;
+                        a_coef -= variation;
                         break;
                     case 'b':
-                        b_coef -= 0.01;
+                        b_coef -= variation;
                         break;
                     case 'c':
-                        c_coef -= 0.01;
+                        c_coef -= variation;
                         break;
-                    default:
-                        print("out of bounds on the coeffs");//debug only this should never be reached
+                    default:  // Debug only; this should never be reached.
+                        pconsole.log("out of bounds on the coeffs");
                 }
                 break;
-            case "ArrowLeft":
+            case "ArrowLeft": // Arrow left key: switches selected coefficient
                 switch (current_coef) {
                     case 'a':
                         current_coef = 'c';
@@ -229,12 +230,12 @@ function keyboard() {
                     case 'c':
                         current_coef = 'b';
                         break;
-                    default:
-                        print("out of bounds on the coeffs");//debug only this should never be reached
+                    default:  // Debug only; this should never be reached.
+                        console.log("out of bounds on the coeffs");
                 }
                 break;
 
-            case "ArrowRight":
+            case "ArrowRight": // Arrow right key: switches selected coefficient
                 switch (current_coef) {
                     case 'a':
                         current_coef = 'b';
@@ -245,41 +246,31 @@ function keyboard() {
                     case 'c':
                         current_coef = 'a';
                         break;
-                    default:
-                        print("out of bounds on the coeffs");//debug only this should never be reached
+                    default:  // Debug only; this should never be reached.
+                        console.log("out of bounds on the coeffs");
                 }
                 break;
-
+            default:
+                console.log("This key does not do anything.");
         }
     });
 
 }
 
-
 function setup(shaders) {
     canvas = document.getElementById("gl-canvas");
     gl = setupWebGL(canvas, { alpha: true, preserveDrawingBuffer: false });
 
-
-    // Create WebGL programs
     program = buildProgramFromSources(gl, shaders["shader1.vert"], shaders["shader1.frag"]);
 
+    handle_u_locs();
+    handle_keyboard_events();
+    handle_mouse_events();
 
-    keyboard();
-
-    mouse();
-
-
+    // Indexes for all samples.
     const indexes = [];
-
-    //generates all the indexes for all the points
-    function generatePoints(npoints) {
-        for (let i = 0; i < npoints; i++) {
-            indexes[i] = i;
-        }
-    }
-
-    generatePoints(MAX_POINTS);
+    for (let i = 0; i < MAX_POINTS; i++)
+        indexes[i] = i;
 
     vao = gl.createVertexArray(vao);
     gl.bindVertexArray(vao);
@@ -292,31 +283,26 @@ function setup(shaders) {
     gl.vertexAttribIPointer(a_index, 1, gl.UNSIGNED_INT, 0, 0);
     gl.enableVertexAttribArray(a_index);
 
-
     gl.bindVertexArray(null);
 
     resize(window);
-
-    // Handle resize events 
     window.addEventListener("resize", (event) => {
         resize(event.target);
     });
 
-    //sets the background color
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
     window.requestAnimationFrame(animate);
 
 }
 
-function my_resizefunc() {
+function resize_window() {
     const dimensions = canvas.width / canvas.height;
     const u_dimensions = gl.getUniformLocation(program, "u_dimensions");
     gl.uniform1f(u_dimensions, dimensions);
 }
 
-function animate(timestamp) {
-
+function setup_dynamic_graphic_interface() {
     var curve = document.getElementById("curve_id");
     curve.innerHTML = curve_type;
     var t_min_id = document.getElementById("tmin_id");
@@ -327,11 +313,12 @@ function animate(timestamp) {
     coefs.innerHTML = [a_coef.toFixed(2), b_coef.toFixed(2), c_coef.toFixed(2)];
     var samples = document.getElementById("samples_id");
     samples.innerHTML = MAX_POINTS;
+}
 
-
+// dt means delta time: period between this frame and the last
+// fixes velocity to be linear
+function handles_animation(timestamp) {
     if (previous_timestamp == null) previous_timestamp = timestamp;
-    // delta time: period between this frame and the last
-    // fixes velocity to be linear
     const dt = (timestamp - previous_timestamp) * 0.001;
     previous_timestamp = timestamp;
 
@@ -348,53 +335,39 @@ function animate(timestamp) {
                 break;
         }
     }
+}
 
+function send_uniforms() {
+    gl.uniform1f(locs.u_now, performance.now() * 0.001);
+    gl.uniform1f(locs.u_speed, 0.5);
+    gl.uniform1i(locs.u_curve_type, curve_type);
+    gl.uniform1i(locs.u_max_points, MAX_POINTS);
+    gl.uniform1f(locs.u_t_min, t_min);
+    gl.uniform1f(locs.u_t_max, t_max);
+    gl.uniform1f(locs.u_a_coef, a_coef);
+    gl.uniform1f(locs.u_b_coef, b_coef);
+    gl.uniform1f(locs.u_c_coef, c_coef);
+    gl.uniform1f(locs.u_size, size);
+    gl.uniform1f(locs.u_offsetX, offsetX);
+    gl.uniform1f(locs.u_offsetY, offsetY);
+}
+
+function animate(timestamp) {
     window.requestAnimationFrame(animate);
-
+    handles_animation(timestamp);
+    setup_dynamic_graphic_interface();
 
     gl.clear(gl.COLOR_BUFFER_BIT);
-
     gl.useProgram(program);
-    my_resizefunc();
+    resize_window();
 
-    const u_now = gl.getUniformLocation(program, "u_now");
-    gl.uniform1f(u_now, performance.now() * 0.001);
-
-    const u_speed = gl.getUniformLocation(program, "u_speed");
-    gl.uniform1f(u_speed, 0.5);
-
-    const u_curve_type = gl.getUniformLocation(program, "u_curve_type");
-    gl.uniform1i(u_curve_type, curve_type);
-
-    const u_max_points = gl.getUniformLocation(program, "u_max_points");
-    gl.uniform1i(u_max_points, MAX_POINTS);
-    const u_t_min = gl.getUniformLocation(program, "u_t_min");
-    gl.uniform1f(u_t_min, t_min);
-    const u_t_max = gl.getUniformLocation(program, "u_t_max");
-    gl.uniform1f(u_t_max, t_max);
-    const u_a_coef = gl.getUniformLocation(program, "u_a_coef");
-    gl.uniform1f(u_a_coef, a_coef);
-    const u_b_coef = gl.getUniformLocation(program, "u_b_coef");
-    gl.uniform1f(u_b_coef, b_coef);
-    const u_c_coef = gl.getUniformLocation(program, "u_c_coef");
-    gl.uniform1f(u_c_coef, c_coef);
-    const u_size = gl.getUniformLocation(program, "u_size");
-    gl.uniform1f(u_size, size);
-    const u_offsetX = gl.getUniformLocation(program, "u_offsetX");
-    gl.uniform1f(u_offsetX, offsetX);
-    const u_offsetY = gl.getUniformLocation(program, "u_offsetY");
-    gl.uniform1f(u_offsetY, offsetY);
-
+    send_uniforms();
     gl.bindVertexArray(vao);
-    if (line_strip) {
-        gl.drawArrays(gl.LINE_STRIP, 0, MAX_POINTS);
-    }
-    else {
-        gl.drawArrays(gl.POINTS, 0, MAX_POINTS);
-    }
+
+    if (line_strip) gl.drawArrays(gl.LINE_STRIP, 0, MAX_POINTS);
+    else gl.drawArrays(gl.POINTS, 0, MAX_POINTS);
+
     gl.bindVertexArray(null);
-
-
     gl.useProgram(null);
 }
 
