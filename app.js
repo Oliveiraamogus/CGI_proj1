@@ -40,48 +40,48 @@ function resize(target) {
 
 function reset_defaults() {
     switch (curve_type) {
-    case 1:
-        a_coef = 1.0;
-        b_coef = 1.0;
-        c_coef = 0.0;
-        t_min = 0;
-        t_max = Math.PI * 2;
-        break;
-    case 2:
-        a_coef = 1.0;
-        b_coef = 17.0;
-        c_coef = 0.0;
-        t_min = 0;
-        t_max = Math.PI * 2;
-        break;
-    case 3:
-        a_coef = 1.0;
-        b_coef = 8.6;
-        c_coef = 0.0;
-        t_min = 0;
-        t_max = Math.PI * 10;
-        break;
-    case 4:
-        a_coef = 7.6;
-        b_coef = 5.1;
-        c_coef = 0.0;
-        t_min = 0;
-        t_max = 10;
-        break;
-    case 5:
-        a_coef = 1.0;
-        b_coef = 4.0;
-        c_coef = 0.0;
-        t_min = 0;
-        t_max = 10;
-        break;
-    case 6:
-        a_coef = 4.0;
-        b_coef = 1.0;
-        c_coef = 0.0;
-        t_min = 0;
-        t_max = Math.PI * 2;
-        break;
+        case 1:
+            a_coef = 1.0;
+            b_coef = 1.0;
+            c_coef = 0.0;
+            t_min = 0;
+            t_max = Math.PI * 2;
+            break;
+        case 2:
+            a_coef = 1.0;
+            b_coef = 17.0;
+            c_coef = 0.0;
+            t_min = 0;
+            t_max = Math.PI * 2;
+            break;
+        case 3:
+            a_coef = 1.0;
+            b_coef = 8.6;
+            c_coef = 0.0;
+            t_min = 0;
+            t_max = Math.PI * 10;
+            break;
+        case 4:
+            a_coef = 7.6;
+            b_coef = 5.1;
+            c_coef = 0.0;
+            t_min = 0;
+            t_max = 10;
+            break;
+        case 5:
+            a_coef = 1.0;
+            b_coef = 4.0;
+            c_coef = 0.0;
+            t_min = 0;
+            t_max = 10;
+            break;
+        case 6:
+            a_coef = 4.0;
+            b_coef = 1.0;
+            c_coef = 0.0;
+            t_min = 0;
+            t_max = Math.PI * 2;
+            break;
     }
 }
 
@@ -104,13 +104,13 @@ function mouse() {
     //moves the canvas acording to the movement of the mouse
     document.addEventListener('mousemove', function (event) {
         if (allowed) {
-            offsetX = (((event.clientX - earlyX) / canvas.width) * 2);
+            offsetX = (((event.clientX - earlyX) / canvas.width) * 2) + x;
             console.log(offsetX);
-            offsetY = (((earlyY - event.clientY) / canvas.height) * 2);
+            offsetY = (((earlyY - event.clientY) / canvas.height) * 2) + y;
         }
     });
 
-    
+
     //detects when the mouse is no longer pressed
     document.addEventListener('mouseup', function (event) {
         x = offsetX;
@@ -294,7 +294,7 @@ function setup(shaders) {
 
 
     gl.bindVertexArray(null);
-    
+
     resize(window);
 
     // Handle resize events 
@@ -325,6 +325,8 @@ function animate(timestamp) {
     t_max_id.innerHTML = t_max.toFixed(2);
     var coefs = document.getElementById("coefs_id");
     coefs.innerHTML = [a_coef.toFixed(2), b_coef.toFixed(2), c_coef.toFixed(2)];
+    var samples = document.getElementById("samples_id");
+    samples.innerHTML = MAX_POINTS;
 
 
     if (previous_timestamp == null) previous_timestamp = timestamp;
