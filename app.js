@@ -1,5 +1,20 @@
 import { loadShadersFromURLS, buildProgramFromSources, setupWebGL } from "../../libs/utils.js";
-import { vec2, flatten } from "../../libs/MV.js";
+
+const INC_SPEED = 0.5;
+const VARIATION = 0.01;
+const LOCS = {};
+const ZOOM1 = 2.50;
+const ZOOM2 = 4.50;
+const ZOOM3 = 1.00;
+const ZOOM4 = 1.00;
+const ZOOM5 = 3.50;
+const ZOOM6 = 6.00;
+const SPEED_FACTOR1 = 0.002;
+const SPEED_FACTOR2 = 0.0008;
+const SPEED_FACTOR3 = 0.0001;
+const SPEED_FACTOR4 = 0.001;
+const SPEED_FACTOR5 = 0.0009;
+const SPEED_FACTOR6 = 0.002;
 
 let canvas;
 let gl;
@@ -16,16 +31,15 @@ let current_coef = 'a';
 let is_animating = false;
 let line_strip = false;
 let previous_timestamp = null;
-const inc_speed = 0.5;
-const variation = 0.01;
-let size = 2.00;
+let zoom = 2.50;
 let offsetX = 0.00;
 let offsetY = 0.00;
 let x = 0.00;
 let y = 0.00;
 let allowed = false;
 let earlyX, earlyY;
-const locs = {};
+let resetting = false;
+let reset_targets = { a: 0, b: 0, c: 0, tmax: 0 };
 
 function handle_u_locs() {
     const names = [
@@ -33,7 +47,7 @@ function handle_u_locs() {
         "u_t_min", "u_t_max", "u_a_coef", "u_b_coef", "u_c_coef",
         "u_size", "u_offsetX", "u_offsetY", "u_dimensions"
     ];
-    names.forEach(i => locs[i] = gl.getUniformLocation(program, i));
+    names.forEach(i => LOCS[i] = gl.getUniformLocation(program, i));
 }
 
 function resize(target) {
@@ -47,53 +61,59 @@ function resize(target) {
     gl.viewport(0, 0, width, height);
 }
 
-function reset_defaults() {
-    switch (curve_type) {
+function get_default_values(curve_id) {
+    switch (curve_id) {
         case 1:
-            a_coef = 1.0;
-            b_coef = 1.0;
-            c_coef = 0.0;
-            t_min = 0;
-            t_max = Math.PI * 2;
-            break;
+            return {
+                a: 1.0, b: 1.0, c: 0.0, tmin: 0, tmax: Math.PI * 2
+            };
         case 2:
-            a_coef = 1.0;
-            b_coef = 17.0;
-            c_coef = 0.0;
-            t_min = 0;
-            t_max = Math.PI * 2;
-            break;
+            return {
+                a: 1.0, b: 17.0, c: 0.0, tmin: 0, tmax: Math.PI * 2
+            };
         case 3:
-            a_coef = 1.0;
-            b_coef = 8.6;
-            c_coef = 0.0;
-            t_min = 0;
-            t_max = Math.PI * 10;
-            break;
+            return {
+                a: 1.0, b: 8.6, c: 0.0, tmin: 0, tmax: Math.PI * 10
+            };
         case 4:
-            a_coef = 7.6;
-            b_coef = 5.1;
-            c_coef = 0.0;
-            t_min = 0;
-            t_max = 10;
-            break;
+            return {
+                a: 7.6, b: 5.1, c: 0.0, tmin: 0, tmax: 10
+            };
         case 5:
-            a_coef = 1.0;
-            b_coef = 4.0;
-            c_coef = 0.0;
-            t_min = 0;
-            t_max = 10;
-            break;
+            return {
+                a: 1.0, b: 4.0, c: 0.0, tmin: 0, tmax: 10
+            };
         case 6:
-            a_coef = 4.0;
-            b_coef = 1.0;
-            c_coef = 0.0;
-            t_min = 0;
-            t_max = Math.PI * 2;
-            break;
+            return {
+                a: 4.0, b: 1.0, c: 0.0, tmin: 0, tmax: Math.PI * 2
+            }
     }
-    current_coef = 'a';
-    size = 2.00;
+}
+
+function get_default_zoom(curve_id) {
+    switch (curve_id) {
+        case 1:
+            return ZOOM1;
+        case 2:
+            return ZOOM2;
+        case 3:
+            return ZOOM3;
+        case 4:
+            return ZOOM4;
+        case 5:
+            return ZOOM5;
+        case 6:
+            return ZOOM6;
+    }
+}
+
+function reset_defaults(curve_id) {
+    a_coef = get_default_values(curve_id).a;
+    b_coef = get_default_values(curve_id).b;
+    c_coef = get_default_values(curve_id).c;
+    t_min = get_default_values(curve_id).tmin;
+    t_max = get_default_values(curve_id).tmax;
+    zoom = get_default_zoom(curve_id);
     offsetX = 0.00;
     offsetY = 0.00;
     x = 0.00;
@@ -104,7 +124,7 @@ function reset_defaults() {
 function handle_mouse_events() {
     // Handles zooming and general wheel interactions
     document.addEventListener('wheel', function (event) {
-        size += (event.deltaY / 1000);
+        zoom += (event.deltaY / 750);
     });
 
     // Detects when the mouse is clicked
@@ -143,33 +163,49 @@ function handle_keyboard_events() {
                 line_strip = !line_strip;
                 break;
             case "r": // Letter r: resets configurations
-                reset_defaults();
-                MAX_POINTS = 60000;
-                is_animating = false;
+                resetting = true;
+                const def_values = get_default_values(curve_type);
+                reset_targets.a = def_values.a;
+                reset_targets.b = def_values.b;
+                reset_targets.c = def_values.c;
+                reset_targets.tmax = def_values.tmax;
+                if (is_animating) is_animating = false;
                 break;
             case "1": // Number 1: Curve's Family 1
-                curve_type = 1;
-                reset_defaults();
+                if (curve_type != 1) {
+                    curve_type = 1;
+                    reset_defaults(curve_type);
+                }
                 break;
             case "2": // Number 2: Curve's Family 2
-                curve_type = 2;
-                reset_defaults();
+                if (curve_type != 2) {
+                    curve_type = 2;
+                    reset_defaults(curve_type);
+                }
                 break;
             case "3": // Number 3: Curve's Family 3
-                curve_type = 3;
-                reset_defaults();
+                if (curve_type != 3) {
+                    curve_type = 3;
+                    reset_defaults(curve_type);
+                }
                 break;
             case "4": // Number 4: Curve's Family 4
-                curve_type = 4;
-                reset_defaults();
+                if (curve_type != 4) {
+                    curve_type = 4;
+                    reset_defaults(curve_type);
+                }
                 break;
             case "5": // Number 5: Curve's Family 5
-                curve_type = 5;
-                reset_defaults();
+                if (curve_type != 5) {
+                    curve_type = 5;
+                    reset_defaults(curve_type);
+                }
                 break;
             case "6": // Number 6: Curve's Family 6
-                curve_type = 6;
-                reset_defaults();
+                if (curve_type != 6) {
+                    curve_type = 6;
+                    reset_defaults(curve_type);
+                }
                 break;
             case "PageUp": // PageUp key: increments t max
                 t_max += 0.01;
@@ -186,17 +222,16 @@ function handle_keyboard_events() {
                     MAX_POINTS -= 500
                 break;
             case "ArrowUp": // Arrow up key: increments the selected coefficient
-                if (is_animating)
-                    is_animating = false;
+                if (is_animating) is_animating = false;
                 switch (current_coef) {
                     case 'a':
-                        a_coef += variation;
+                        a_coef += VARIATION;
                         break;
                     case 'b':
-                        b_coef += variation;
+                        b_coef += VARIATION;
                         break;
                     case 'c':
-                        c_coef += variation;
+                        c_coef += VARIATION;
                         break;
                     default: // Debug only; this should never be reached.
                         console.log("out of bounds on the coeffs");
@@ -207,13 +242,13 @@ function handle_keyboard_events() {
                     is_animating = false;
                 switch (current_coef) {
                     case 'a':
-                        a_coef -= variation;
+                        a_coef -= VARIATION;
                         break;
                     case 'b':
-                        b_coef -= variation;
+                        b_coef -= VARIATION;
                         break;
                     case 'c':
-                        c_coef -= variation;
+                        c_coef -= VARIATION;
                         break;
                     default:  // Debug only; this should never be reached.
                         pconsole.log("out of bounds on the coeffs");
@@ -315,41 +350,90 @@ function setup_dynamic_graphic_interface() {
     samples.innerHTML = MAX_POINTS;
 }
 
-// dt means delta time: period between this frame and the last
-// fixes velocity to be linear
 function handles_animation(timestamp) {
     if (previous_timestamp == null) previous_timestamp = timestamp;
-    const dt = (timestamp - previous_timestamp) * 0.001;
+
+    let animation_speed;
+
+    switch (curve_type) {
+        case 1:
+            animation_speed = (timestamp - previous_timestamp) * SPEED_FACTOR1;
+            break;
+        case 2:
+            animation_speed = (timestamp - previous_timestamp) * SPEED_FACTOR2;
+            break;
+        case 3:
+            animation_speed = (timestamp - previous_timestamp) * SPEED_FACTOR3;
+            break;
+        case 4:
+            animation_speed = (timestamp - previous_timestamp) * SPEED_FACTOR4;
+            break;
+        case 5:
+            animation_speed = (timestamp - previous_timestamp) * SPEED_FACTOR5;
+            break;
+        case 6:
+            animation_speed = (timestamp - previous_timestamp) * SPEED_FACTOR6;
+            break;
+    }
+
     previous_timestamp = timestamp;
 
     if (is_animating) {
         switch (current_coef) {
             case 'a':
-                a_coef += dt * inc_speed;
+                a_coef += animation_speed * INC_SPEED;
                 break;
             case 'b':
-                b_coef += dt * inc_speed;
+                b_coef += animation_speed * INC_SPEED;
                 break;
             case 'c':
-                c_coef += dt * inc_speed;
+                c_coef += animation_speed * INC_SPEED;
                 break;
         }
+    }
+
+    if (resetting) {
+        const reset_speed = animation_speed * 2.50;
+
+        if (a_coef > reset_targets.a)
+            a_coef = Math.max(reset_targets.a, a_coef - reset_speed);
+        else if (a_coef < reset_targets.a)
+            a_coef = Math.min(reset_targets.a, a_coef + reset_speed);
+
+        if (b_coef > reset_targets.b)
+            b_coef = Math.max(reset_targets.b, b_coef - reset_speed);
+        else if (b_coef < reset_targets.b)
+            b_coef = Math.min(reset_targets.b, b_coef + reset_speed);
+
+        if (c_coef > reset_targets.c)
+            c_coef = Math.max(reset_targets.c, c_coef - reset_speed);
+        else if (c_coef < reset_targets.c)
+            c_coef = Math.min(reset_targets.c, c_coef + reset_speed);
+
+        if (t_max > reset_targets.tmax)
+            t_max = Math.max(reset_targets.tmax, t_max - reset_speed);
+        else if (a_coef < reset_targets.tmax)
+            t_max = Math.min(reset_targets.tmax, t_max + reset_speed);
+
+        if (a_coef == reset_targets.a && b_coef == reset_targets.b &&
+            c_coef == reset_targets.c && t_max == reset_targets.tmax)
+            resetting = false;
     }
 }
 
 function send_uniforms() {
-    gl.uniform1f(locs.u_now, performance.now() * 0.001);
-    gl.uniform1f(locs.u_speed, 0.5);
-    gl.uniform1i(locs.u_curve_type, curve_type);
-    gl.uniform1i(locs.u_max_points, MAX_POINTS);
-    gl.uniform1f(locs.u_t_min, t_min);
-    gl.uniform1f(locs.u_t_max, t_max);
-    gl.uniform1f(locs.u_a_coef, a_coef);
-    gl.uniform1f(locs.u_b_coef, b_coef);
-    gl.uniform1f(locs.u_c_coef, c_coef);
-    gl.uniform1f(locs.u_size, size);
-    gl.uniform1f(locs.u_offsetX, offsetX);
-    gl.uniform1f(locs.u_offsetY, offsetY);
+    gl.uniform1f(LOCS.u_now, performance.now() * 0.001);
+    gl.uniform1f(LOCS.u_speed, 0.5);
+    gl.uniform1i(LOCS.u_curve_type, curve_type);
+    gl.uniform1i(LOCS.u_max_points, MAX_POINTS);
+    gl.uniform1f(LOCS.u_t_min, t_min);
+    gl.uniform1f(LOCS.u_t_max, t_max);
+    gl.uniform1f(LOCS.u_a_coef, a_coef);
+    gl.uniform1f(LOCS.u_b_coef, b_coef);
+    gl.uniform1f(LOCS.u_c_coef, c_coef);
+    gl.uniform1f(LOCS.u_size, zoom);
+    gl.uniform1f(LOCS.u_offsetX, offsetX);
+    gl.uniform1f(LOCS.u_offsetY, offsetY);
 }
 
 function animate(timestamp) {
