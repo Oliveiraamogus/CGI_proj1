@@ -40,6 +40,7 @@ let allowed = false;
 let earlyX, earlyY;
 let resetting = false;
 let reset_targets = { a: 0, b: 0, c: 0, tmax: 0 };
+let color_offset = 0.0;
 
 function handle_u_locs() {
     const names = [
@@ -390,6 +391,7 @@ function handles_animation(timestamp) {
                 c_coef += animation_speed * INC_SPEED;
                 break;
         }
+        color_offset += animation_speed;
     }
 
     if (resetting) {
@@ -422,7 +424,7 @@ function handles_animation(timestamp) {
 }
 
 function send_uniforms() {
-    gl.uniform1f(LOCS.u_now, performance.now() * 0.001);
+    gl.uniform1f(LOCS.u_now, color_offset);
     gl.uniform1f(LOCS.u_speed, 0.5);
     gl.uniform1i(LOCS.u_curve_type, curve_type);
     gl.uniform1i(LOCS.u_max_points, MAX_POINTS);
