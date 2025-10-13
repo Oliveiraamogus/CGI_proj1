@@ -19,8 +19,8 @@ let canvas;
 let gl;
 let program;
 var vao;
-let INC_SPEED = 0.5;
-let MAX_POINTS = 60000;
+let inc_speed = 0.5;
+let max_points = 60000;
 let curve_type = 1;
 let t_min = 0.00;
 let t_max = Math.PI * 2.0;
@@ -51,6 +51,7 @@ function handle_u_locs() {
     names.forEach(i => LOCS[i] = gl.getUniformLocation(program, i));
 }
 
+// Resizes the canvas
 function resize(target) {
     const width = target.innerWidth;
     const height = target.innerHeight;
@@ -62,6 +63,7 @@ function resize(target) {
     gl.viewport(0, 0, width, height);
 }
 
+// Returns the default values of the coeficients and t limits for the curve id given
 function get_default_values(curve_id) {
     switch (curve_id) {
         case 1:
@@ -91,6 +93,7 @@ function get_default_values(curve_id) {
     }
 }
 
+// Returns the camera zoom for a given curve id
 function get_default_zoom(curve_id) {
     switch (curve_id) {
         case 1:
@@ -108,6 +111,7 @@ function get_default_zoom(curve_id) {
     }
 }
 
+// Resets the default values of the variables needed
 function reset_defaults(curve_id) {
     a_coef = get_default_values(curve_id).a;
     b_coef = get_default_values(curve_id).b;
@@ -135,13 +139,12 @@ function handle_mouse_events() {
         allowed = true;
     });
 
-
+    // Detects when the animation slider is selected and receives and updates the respective value
     const rSlider = document.getElementById("slider");
     const rVal = document.getElementById("range-value");
     rSlider.addEventListener("input", function () {
         rVal.textContent = "Value: " + rSlider.value + "%";
-        INC_SPEED = rSlider.value / 100;
-        console.log(INC_SPEED);
+        inc_speed = rSlider.value / 100;
         allowed = false;
     });
 
@@ -162,21 +165,19 @@ function handle_mouse_events() {
     });
 }
 
-//Handles the events related to the animation speed slider
-function handle_slide_events() {
-    const rSlider = document.getElementById("slider");
-    const rVal = document.getElementById("range-value");
-    rSlider.addEventListener("input", function () {
-        rVal.textContent = "Value: " + rSlider.value + "%";
-        INC_SPEED = rSlider.value / 100;
-        console.log(INC_SPEED);
-    });
-}
 
 //handles all the keyboard events
 function handle_keyboard_events() {
     document.addEventListener("keydown", function (event) {
         switch (event.key) {
+            case "h": // h: hides all the html menusvar
+                let menu = document.getElementById("keys");
+                if (menu.style.display == "block") {
+                    menu.style.display = "none";
+                } else {
+                    menu.style.display = "block";
+                }
+                break;
             case " ": // Space bar: starts animating the curve
                 is_animating = !is_animating;
                 break;
@@ -234,12 +235,12 @@ function handle_keyboard_events() {
             case "PageDown": // PageDown key: decrements t max
                 t_max -= 0.01;
             case "+": // + key: increments samples (points). Minimum 500 samples displayed.
-                if (MAX_POINTS != 60000)
-                    MAX_POINTS += 500;
+                if (max_points != 60000)
+                    max_points += 500;
                 break;
             case "-": // - key: decrements samples (points). Maximum 60000 samples displayed.
-                if (MAX_POINTS != 0 && MAX_POINTS > 500)
-                    MAX_POINTS -= 500
+                if (max_points != 0 && max_points > 500)
+                    max_points -= 500
                 break;
             case "ArrowUp": // Arrow up key: increments the selected coefficient
                 if (is_animating) is_animating = false;
@@ -321,11 +322,10 @@ function setup(shaders) {
     handle_u_locs();
     handle_keyboard_events();
     handle_mouse_events();
-    //handle_slide_events();
 
     // Indexes for all samples.
     const indexes = [];
-    for (let i = 0; i < MAX_POINTS; i++)
+    for (let i = 0; i < max_points; i++)
         indexes[i] = i;
 
     vao = gl.createVertexArray(vao);
@@ -368,7 +368,7 @@ function setup_dynamic_graphic_interface() {
     var coefs = document.getElementById("coefs_id");
     coefs.innerHTML = [a_coef.toFixed(2), b_coef.toFixed(2), c_coef.toFixed(2)];
     var samples = document.getElementById("samples_id");
-    samples.innerHTML = MAX_POINTS;
+    samples.innerHTML = max_points;
 }
 
 function handles_animation(timestamp) {
@@ -402,16 +402,16 @@ function handles_animation(timestamp) {
     if (is_animating) {
         switch (current_coef) {
             case 'a':
-                a_coef += animation_speed * INC_SPEED;
+                a_coef += animation_speed * inc_speed;
                 break;
             case 'b':
-                b_coef += animation_speed * INC_SPEED;
+                b_coef += animation_speed * inc_speed;
                 break;
             case 'c':
-                c_coef += animation_speed * INC_SPEED;
+                c_coef += animation_speed * inc_speed;
                 break;
         }
-        color_offset += animation_speed * INC_SPEED;
+        color_offset += animation_speed * inc_speed;
     }
 
     if (resetting) {
@@ -447,7 +447,7 @@ function send_uniforms() {
     gl.uniform1f(LOCS.u_now, color_offset);
     gl.uniform1f(LOCS.u_speed, 0.5);
     gl.uniform1i(LOCS.u_curve_type, curve_type);
-    gl.uniform1i(LOCS.u_max_points, MAX_POINTS);
+    gl.uniform1i(LOCS.u_max_points, max_points);
     gl.uniform1f(LOCS.u_t_min, t_min);
     gl.uniform1f(LOCS.u_t_max, t_max);
     gl.uniform1f(LOCS.u_a_coef, a_coef);
@@ -470,8 +470,8 @@ function animate(timestamp) {
     send_uniforms();
     gl.bindVertexArray(vao);
 
-    if (line_strip) gl.drawArrays(gl.LINE_STRIP, 0, MAX_POINTS);
-    else gl.drawArrays(gl.POINTS, 0, MAX_POINTS);
+    if (line_strip) gl.drawArrays(gl.LINE_STRIP, 0, max_points);
+    else gl.drawArrays(gl.POINTS, 0, max_points);
 
     gl.bindVertexArray(null);
     gl.useProgram(null);
