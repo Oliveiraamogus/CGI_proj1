@@ -1,6 +1,5 @@
 import { loadShadersFromURLS, buildProgramFromSources, setupWebGL } from "../../libs/utils.js";
 
-const INC_SPEED = 0.5;
 const VARIATION = 0.01;
 const LOCS = {};
 const ZOOM1 = 2.50;
@@ -20,6 +19,7 @@ let canvas;
 let gl;
 let program;
 var vao;
+let INC_SPEED = 0.5;
 let MAX_POINTS = 60000;
 let curve_type = 1;
 let t_min = 0.00;
@@ -115,6 +115,7 @@ function reset_defaults(curve_id) {
     t_min = get_default_values(curve_id).tmin;
     t_max = get_default_values(curve_id).tmax;
     zoom = get_default_zoom(curve_id);
+    INC_SPEED = 0.5;
     offsetX = 0.00;
     offsetY = 0.00;
     x = 0.00;
@@ -139,7 +140,6 @@ function handle_mouse_events() {
     document.addEventListener('mousemove', function (event) {
         if (allowed) {
             offsetX = (((event.clientX - earlyX) / canvas.width) * 2) + x;
-            console.log(offsetX);
             offsetY = (((earlyY - event.clientY) / canvas.height) * 2) + y;
         }
     });
@@ -151,6 +151,18 @@ function handle_mouse_events() {
         y = offsetY;
         allowed = false;
     });
+}
+
+//Handles the events related to the animation speed slider
+function handle_slide_events() {
+    let animation_factor = 1;
+    document.getElementById("slide").onchange =
+        function(event) {
+        animation_factor = event.target.value / 100;
+        INC_SPEED = animation_factor;
+        console.log(INC_SPEED);
+    };
+
 }
 
 //handles all the keyboard events
@@ -216,7 +228,6 @@ function handle_keyboard_events() {
             case "+": // + key: increments samples (points). Minimum 500 samples displayed.
                 if (MAX_POINTS != 60000)
                     MAX_POINTS += 500;
-                console.log(MAX_POINTS);
                 break;
             case "-": // - key: decrements samples (points). Maximum 60000 samples displayed.
                 if (MAX_POINTS != 0 && MAX_POINTS > 500)
@@ -302,6 +313,7 @@ function setup(shaders) {
     handle_u_locs();
     handle_keyboard_events();
     handle_mouse_events();
+    handle_slide_events();
 
     // Indexes for all samples.
     const indexes = [];
