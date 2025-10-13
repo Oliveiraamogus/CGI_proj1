@@ -115,7 +115,6 @@ function reset_defaults(curve_id) {
     t_min = get_default_values(curve_id).tmin;
     t_max = get_default_values(curve_id).tmax;
     zoom = get_default_zoom(curve_id);
-    INC_SPEED = 0.5;
     offsetX = 0.00;
     offsetY = 0.00;
     x = 0.00;
@@ -134,6 +133,16 @@ function handle_mouse_events() {
         earlyX = event.clientX;
         earlyY = event.clientY;
         allowed = true;
+    });
+
+
+    const rSlider = document.getElementById("slider");
+    const rVal = document.getElementById("range-value");
+    rSlider.addEventListener("input", function () {
+        rVal.textContent = "Value: " + rSlider.value + "%";
+        INC_SPEED = rSlider.value / 100;
+        console.log(INC_SPEED);
+        allowed = false;
     });
 
     // Moves the canvas acording to the movement of the mouse
@@ -155,14 +164,13 @@ function handle_mouse_events() {
 
 //Handles the events related to the animation speed slider
 function handle_slide_events() {
-    let animation_factor = 1;
-    document.getElementById("slide").onchange =
-        function(event) {
-        animation_factor = event.target.value / 100;
-        INC_SPEED = animation_factor;
+    const rSlider = document.getElementById("slider");
+    const rVal = document.getElementById("range-value");
+    rSlider.addEventListener("input", function () {
+        rVal.textContent = "Value: " + rSlider.value + "%";
+        INC_SPEED = rSlider.value / 100;
         console.log(INC_SPEED);
-    };
-
+    });
 }
 
 //handles all the keyboard events
@@ -313,7 +321,7 @@ function setup(shaders) {
     handle_u_locs();
     handle_keyboard_events();
     handle_mouse_events();
-    handle_slide_events();
+    //handle_slide_events();
 
     // Indexes for all samples.
     const indexes = [];
@@ -403,7 +411,7 @@ function handles_animation(timestamp) {
                 c_coef += animation_speed * INC_SPEED;
                 break;
         }
-        color_offset += animation_speed;
+        color_offset += animation_speed * INC_SPEED;
     }
 
     if (resetting) {
